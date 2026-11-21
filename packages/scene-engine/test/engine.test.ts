@@ -169,13 +169,21 @@ describe('layer composer', () => {
     })),
   });
 
-  it('stacks background, props, avatars, effects and bubble in that order', () => {
+  it('stacks background, avatars, props, effects and bubble (busts sit behind the table)', () => {
     const c = composeScene(sceneFromCatalog('birthday_cake', { bubbleText: 'HBD!' })!, assets);
     const order = c.layers.map((l) => l.kind);
     expect(order[0]).toBe('background');
     expect(order.at(-1)).toBe('bubble');
+    expect(order.lastIndexOf('avatar')).toBeLessThan(order.indexOf('prop'));
+    expect(order.lastIndexOf('prop')).toBeLessThan(order.indexOf('effect'));
+  });
+
+  it('keeps the old full-body figures available', () => {
+    const c = composeScene(sceneFromCatalog('birthday_cake', { bubbleText: 'HBD!' })!, assets, {
+      avatarStyle: 'figure',
+    });
+    const order = c.layers.map((l) => l.kind);
     expect(order.indexOf('prop')).toBeLessThan(order.indexOf('avatar'));
-    expect(order.lastIndexOf('avatar')).toBeLessThan(order.indexOf('effect'));
   });
 
   it('places 1, 2 and 500 avatars and shares one asset between identical ones', () => {
@@ -188,7 +196,7 @@ describe('layer composer', () => {
     const crowd = composeScene(withCrowd(MAX_AVATARS), assets);
     const avatars = crowd.layers.filter((l) => l.kind === 'avatar');
     expect(avatars).toHaveLength(500);
-    expect(Object.keys(crowd.assets).filter((k) => k.startsWith('avatar:'))).toHaveLength(1);
+    expect(Object.keys(crowd.assets).filter((k) => k.startsWith('bust:'))).toHaveLength(1);
     for (const a of avatars) {
       expect(a.x).toBeGreaterThanOrEqual(0);
       expect(a.x).toBeLessThanOrEqual(crowd.width);

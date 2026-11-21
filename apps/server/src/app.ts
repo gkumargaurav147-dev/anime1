@@ -15,6 +15,7 @@ import { meRoutes } from './routes/me';
 import { otpRoutes } from './routes/otp';
 import { friendRoutes } from './routes/friends';
 import { conversationRoutes } from './routes/conversations';
+import { avatarRoutes } from './routes/avatars';
 import { LocalBus, RedisBus, type EventBus } from './realtime/bus';
 import { registerGateway } from './realtime/gateway';
 import { MemoryPresenceStore, RedisPresenceStore, type PresenceStore } from './realtime/presence';
@@ -44,7 +45,11 @@ export async function buildApp(
     ...opts,
   });
 
-  await app.register(cors, { origin: config.NODE_ENV === 'production' ? false : true });
+  await app.register(cors, {
+    origin: config.NODE_ENV === 'production' ? false : true,
+    // The default only covers GET/HEAD/POST; the web build also needs PUT and DELETE.
+    methods: ['GET', 'HEAD', 'POST', 'PUT', 'DELETE'],
+  });
 
   let redis: Redis | undefined;
   if (config.REDIS_URL) {
@@ -121,6 +126,7 @@ export async function buildApp(
   await app.register(otpRoutes(ctx));
   await app.register(friendRoutes(ctx));
   await app.register(conversationRoutes(ctx));
+  await app.register(avatarRoutes(ctx));
   await app.register(async (scope) => registerGateway(scope, ctx));
 
   return app;

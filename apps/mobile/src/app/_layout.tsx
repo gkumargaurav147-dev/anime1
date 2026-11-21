@@ -3,6 +3,7 @@ import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { AuthProvider, useAuth } from '@/auth/AuthContext';
 import { ChatProvider } from '@/chat/ChatContext';
+import { AvatarsProvider } from '@/avatar/AvatarsContext';
 import { colors } from '@/components/ui';
 
 function RootStack() {
@@ -35,6 +36,8 @@ function RootStack() {
         <Stack.Screen name="chat/[id]" options={{ title: '' }} />
         <Stack.Screen name="blocked-users" options={{ title: 'Blocked users' }} />
         <Stack.Screen name="settings" options={{ title: 'Settings' }} />
+        <Stack.Screen name="avatar-creator" options={{ title: 'Your avatar' }} />
+        <Stack.Screen name="avatar-demo" options={{ title: 'Expressions & gestures' }} />
       </Stack.Protected>
     </Stack>
   );
@@ -44,8 +47,10 @@ export default function RootLayout() {
   return (
     <AuthProvider>
       <ChatProvider>
-        <StatusBar style="dark" />
-        <RootStack />
+        <AvatarsProvider>
+          <StatusBar style="dark" />
+          <RootStack />
+        </AvatarsProvider>
       </ChatProvider>
     </AuthProvider>
   );

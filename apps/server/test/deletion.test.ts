@@ -1,3 +1,4 @@
+import { randomAvatar } from '@anime/scene-engine';
 import { createTestApp, resetDb, signupUser, type TestCtx } from './helpers';
 
 let ctx: TestCtx;
@@ -18,6 +19,7 @@ const USER_TABLES: [table: string, column: string][] = [
   ['blocks', 'blocker_id'],
   ['conversation_members', 'user_id'],
   ['messages', 'sender_id'],
+  ['avatars', 'user_id'],
 ];
 
 async function countRows(userId: string) {
@@ -70,6 +72,12 @@ describe('DELETE /me', () => {
       .set('authorization', bearer)
       .send({ clientMessageId: 'delete-me-0001', text: 'soon gone' })
       .expect(201);
+    await ctx
+      .http()
+      .put('/me/avatar')
+      .set('authorization', bearer)
+      .send({ avatar: randomAvatar('deleted-user') })
+      .expect(200);
     const third = await signupUser(ctx);
     await ctx
       .http()

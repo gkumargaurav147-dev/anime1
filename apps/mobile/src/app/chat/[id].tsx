@@ -2,20 +2,35 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   FlatList,
   KeyboardAvoidingView,
+  Modal,
   Platform,
   Pressable,
   StyleSheet,
   Text,
-  TextInput,
+  useWindowDimensions,
   View,
 } from 'react-native';
 import { Stack, useFocusEffect, useLocalSearchParams } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import type { Scene } from '@anime/scene-engine';
 import type { ConversationSummary, Message } from '@anime/shared-types';
+import { useAuth } from '@/auth/AuthContext';
+import { useAvatars } from '@/avatar/AvatarsContext';
+import {
+  ANIME_MODES,
+  ANIME_MODE_LABEL,
+  loadAnimeMode,
+  saveAnimeMode,
+  type AnimeMode,
+} from '@/chat/animeMode';
 import { useChat } from '@/chat/ChatContext';
+import { Composer } from '@/chat/composer/Composer';
+import { HeaderScene } from '@/chat/HeaderScene';
 import type { OutboxItem } from '@/chat/localStore';
 import { ConnectionBanner, formatTime, presenceLabel } from '@/components/chat-ui';
 import { colors } from '@/components/ui';
+import { SceneCard } from '@/scenes/SceneCard';
+import { asScene } from '@/scenes/sceneSvg';
 
 type Row =
   | { kind: 'message'; key: string; message: Message }
@@ -51,8 +66,22 @@ export default function Chat() {
   const chat = useChat();
   const { conversations, messages, outbox, presence, myUserId, hasOlder, status } = chat;
   const conv = conversations.find((c) => c.id === id);
-  const [text, setText] = useState('');
+  const { session } = useAuth();
   const [loadingOlder, setLoadingOlder] = useState(false);
+  const [mode, setMode] = useState<AnimeMode>('on');
+  const [enlarged, setEnlarged] = useState<Scene | null>(null);
+  const { width } = useWindowDimensions();
+  const peerId = conv?.peer.id ?? '';
+  const avatars = useAvatars(myUserId && peerId ? [myUserId, peerId] : []);
+
+  useEffect(() => {
+    if (id) void loadAnimeMode(id).then(setMode);
+  }, [id]);
+  const cycleMode = () => {
+    const next = ANIME_MODES[(ANIME_MODES.indexOf(mode) + 1) % ANIME_MODES.length]!;
+    setMode(next);
+    if (id) void saveAnimeMode(id, next);
+  };
 
   // Run once per conversation (the chat object changes on every message).
   useEffect(() => {
@@ -80,11 +109,21 @@ export default function Chat() {
     return [...sent, ...pending].reverse();
   }, [messages, outbox, id]);
 
-  const onSend = () => {
+  const onSend = (text: string, scene: Scene | null) => {
     if (!id || !text.trim()) return;
-    void chat.sendText(id, text);
-    setText('');
+    void chat.sendText(id, text, scene as unknown as Record<string, unknown> | null);
   };
+
+  const latest = useMemo(() => {
+    const m = rows.find((r) => r.kind === 'message');
+    if (m?.kind === 'message') return m.message;
+    const p = rows[0];
+    return p?.kind === 'pending'
+      ? { text: p.item.text, animeScene: p.item.animeScene ?? null, senderId: myUserId ?? '' }
+      : null;
+  }, [rows, myUserId]);
+
+  const cardWidth = Math.min(260, width * 0.66);
 
   const onEndReached = async () => {
     if (!id || loadingOlder || !hasOlder[id]) return;
@@ -109,6 +148,24 @@ export default function Chat() {
               ) : null}
             </View>
           ),
+          headerRight: () => (
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+              {myUserId && peerId ? (
+                <HeaderScene myId={myUserId} peerId={peerId} avatars={avatars} latest={latest} />
+              ) : null}
+              <Pressable
+                testID="anime-mode"
+                onPress={cycleMode}
+                accessibilityRole="button"
+                accessibilityLabel={`${ANIME_MODE_LABEL[mode]}. Tap to change.`}
+                style={styles.modeBtn}
+              >
+                <Text style={styles.modeText}>
+                  {mode === 'on' ? '✨ On' : mode === 'ask' ? '✨ Ask' : '✨ Off'}
+                </Text>
+              </Pressable>
+            </View>
+          ),
         }}
       />
       <ConnectionBanner status={status} />
@@ -129,9 +186,24 @@ export default function Chat() {
             const body = row.kind === 'pending' ? row.item.text : row.message.text;
             const at = row.kind === 'pending' ? row.item.createdAt : row.message.createdAt;
             const failed = row.kind === 'pending' ? row.item.failedReason : undefined;
+            // Invalid / unrenderable scenes are simply skipped: the text always shows.
+            const scene = asScene(
+              row.kind === 'pending' ? row.item.animeScene : row.message.animeScene,
+            );
             return (
               <View style={{ alignItems: mine ? 'flex-end' : 'flex-start' }}>
                 <View style={[styles.bubble, mine ? styles.mine : styles.theirs]}>
+                  {scene ? (
+                    <View style={{ marginBottom: 6 }}>
+                      <SceneCard
+                        scene={scene}
+                        avatars={avatars}
+                        width={cardWidth}
+                        id={row.key}
+                        onEnlarge={() => setEnlarged(scene)}
+                      />
+                    </View>
+                  ) : null}
                   <Text style={[styles.text, mine && { color: colors.primaryText }]}>{body}</Text>
                   <View style={styles.meta}>
                     <Text style={[styles.time, mine && { color: '#E4E0FF' }]}>
@@ -159,30 +231,35 @@ export default function Chat() {
           <Text style={styles.cannotSend}>
             You can't send messages here because you're no longer friends.
           </Text>
-        ) : (
-          <View style={styles.composer}>
-            <TextInput
-              style={styles.input}
-              value={text}
-              onChangeText={setText}
-              placeholder="Message"
-              placeholderTextColor={colors.muted}
-              multiline
-              maxLength={4000}
-              accessibilityLabel="Message"
-            />
-            <Pressable
-              onPress={onSend}
-              disabled={!text.trim()}
-              accessibilityRole="button"
-              accessibilityLabel="Send"
-              style={[styles.send, !text.trim() && { opacity: 0.4 }]}
-            >
-              <Text style={{ color: colors.primaryText, fontWeight: '700' }}>Send</Text>
-            </Pressable>
-          </View>
-        )}
+        ) : myUserId && peerId ? (
+          <Composer
+            mode={mode}
+            ageBracket={session?.user.ageBracket ?? 'teen'}
+            myId={myUserId}
+            peerId={peerId}
+            onSend={onSend}
+            renderScene={(s, w) => <SceneCard scene={s} avatars={avatars} width={w} />}
+          />
+        ) : null}
       </KeyboardAvoidingView>
+
+      <Modal
+        visible={!!enlarged}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setEnlarged(null)}
+      >
+        <Pressable
+          style={styles.enlargeBackdrop}
+          onPress={() => setEnlarged(null)}
+          accessibilityRole="button"
+          accessibilityLabel="Close scene"
+        >
+          {enlarged ? (
+            <SceneCard scene={enlarged} avatars={avatars} width={Math.min(width - 32, 560)} />
+          ) : null}
+        </Pressable>
+      </Modal>
     </SafeAreaView>
   );
 }
@@ -200,30 +277,19 @@ const styles = StyleSheet.create({
   failedRow: { flexDirection: 'row', gap: 12, marginTop: 2 },
   failedText: { fontSize: 12, color: colors.danger },
   failedAction: { fontSize: 12, color: colors.primary, fontWeight: '700' },
-  composer: {
-    flexDirection: 'row',
-    alignItems: 'flex-end',
-    gap: 8,
-    padding: 8,
-    borderTopWidth: 1,
-    borderTopColor: colors.border,
-  },
-  input: {
-    flex: 1,
-    maxHeight: 120,
+  modeBtn: {
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 999,
     borderWidth: 1,
-    borderColor: colors.border,
-    borderRadius: 20,
-    paddingHorizontal: 14,
-    paddingVertical: 10,
-    fontSize: 16,
-    color: colors.text,
+    borderColor: colors.primary,
   },
-  send: {
-    backgroundColor: colors.primary,
-    borderRadius: 20,
-    paddingHorizontal: 16,
-    paddingVertical: 11,
+  modeText: { color: colors.primary, fontWeight: '700', fontSize: 12 },
+  enlargeBackdrop: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.75)',
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   cannotSend: { padding: 16, textAlign: 'center', color: colors.muted },
 });

@@ -17,6 +17,7 @@ const frameSchema = z.discriminatedUnion('type', [
     conversationId: z.uuid(),
     clientMessageId: z.string(),
     text: z.string(),
+    animeScene: z.record(z.string(), z.unknown()).nullable().optional(),
   }),
   z.object({
     type: z.enum(['delivered', 'seen']),
@@ -180,6 +181,7 @@ export async function registerGateway(app: FastifyInstance, ctx: Ctx) {
               frame.conversationId,
               frame.clientMessageId,
               frame.text,
+              frame.animeScene,
             );
             return send(conn, { type: 'ack', clientMessageId: frame.clientMessageId, ...r });
           }

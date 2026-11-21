@@ -1,3 +1,4 @@
+import { SCENE_EXPRESSION_TO_ID } from './avatar/expressions';
 import { defaultCatalog, type SceneCatalog } from './catalog/loader';
 import {
   parseText,
@@ -180,8 +181,23 @@ function buildScene(
       action: entry.action === 'wave' || entry.action === 'talk' ? entry.action : entry.action,
     });
   }
-  // Sarcasm or negation tones the faces down rather than showing a party.
-  if (parse?.sarcasm.likely) for (const p of people) p.expression = 'neutral';
+  // Avatar direction: per-character cast from the catalog, else the scene's expression.
+  people.forEach((p, i) => {
+    const dir = entry.cast?.[i];
+    p.expression_id = dir?.expression_id ?? SCENE_EXPRESSION_TO_ID[entry.expression];
+    p.gesture = dir?.gesture ?? null;
+    p.intensity = dir?.intensity ?? (entry.intensity_levels.includes(3) ? 3 : 2);
+    if (dir?.framing) p.framing = dir.framing;
+    if (dir?.glow) p.glow = dir.glow;
+  });
+  // Sarcasm tones the faces down rather than showing a party.
+  if (parse?.sarcasm.likely) {
+    for (const p of people) {
+      p.expression = 'neutral';
+      p.expression_id = 'side_eye';
+      p.gesture = null;
+    }
+  }
 
   const excited = entry.emotion === 'excited' || entry.intensity_levels.includes(3);
   const text = bubbleOverride ?? (parse ? bubbleText(entry, parse) : null);

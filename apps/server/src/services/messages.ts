@@ -1,7 +1,8 @@
 import type { Pool } from 'pg';
-import type { Message, MessageStatus } from '@anime/shared-types';
+import type { Message, MessageStatus, SceneDropReason } from '@anime/shared-types';
 import { AppError } from '../errors';
 import type { EventBus } from '../realtime/bus';
+import { checkScene } from './scenes';
 import { canMessage } from './social';
 
 export interface MessageRow {
@@ -62,7 +63,8 @@ export async function sendMessage(
   conversationId: string,
   clientMessageId: string,
   text: string,
-): Promise<{ message: Message; duplicate: boolean }> {
+  animeScene?: unknown,
+): Promise<{ message: Message; duplicate: boolean; sceneDropped: SceneDropReason | null }> {
   if (!CLIENT_MESSAGE_ID_RE.test(clientMessageId)) {
     throw new AppError(
       400,
@@ -86,6 +88,12 @@ export async function sendMessage(
     }
   }
 
+  // A bad scene never blocks the message: it is dropped and the text goes through.
+  const { scene, dropped } = await checkScene(pool, animeScene, senderId, members).catch(() => ({
+    scene: null,
+    dropped: 'invalid' as const,
+  }));
+
   const client = await pool.connect();
   let row: MessageRow | undefined;
   try {
@@ -97,11 +105,18 @@ export async function sendMessage(
       [conversationId],
     );
     const inserted = await client.query<MessageRow>(
-      `INSERT INTO messages (conversation_id, seq, sender_id, client_message_id, text)
-       VALUES ($1, $2, $3, $4, $5)
+      `INSERT INTO messages (conversation_id, seq, sender_id, client_message_id, text, anime_scene)
+       VALUES ($1, $2, $3, $4, $5, $6)
        ON CONFLICT (sender_id, client_message_id) DO NOTHING
        RETURNING ${MESSAGE_COLUMNS}`,
-      [conversationId, seqRes.rows[0]!.last_seq, senderId, clientMessageId, text],
+      [
+        conversationId,
+        seqRes.rows[0]!.last_seq,
+        senderId,
+        clientMessageId,
+        text,
+        scene ? JSON.stringify(scene) : null,
+      ],
     );
     row = inserted.rows[0];
     // A concurrent retry won the race: undo our seq bump and return theirs.
@@ -122,7 +137,7 @@ export async function sendMessage(
   const message = toMessage(row);
   // Everyone in the conversation, including the sender's other devices.
   await bus.publish(members, { type: 'message', message });
-  return { message, duplicate: false };
+  return { message, duplicate: false, sceneDropped: dropped };
 }
 
 async function findByClientId(pool: Pool, senderId: string, clientMessageId: string) {
@@ -141,7 +156,7 @@ function duplicateOf(row: MessageRow, conversationId: string) {
       'clientMessageId was already used in another conversation.',
     );
   }
-  return { message: toMessage(row), duplicate: true };
+  return { message: toMessage(row), duplicate: true, sceneDropped: null };
 }
 
 /**

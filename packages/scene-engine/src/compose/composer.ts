@@ -1,4 +1,7 @@
 import type { AssetProvider, AssetRef } from '../assets/AssetProvider';
+import { SCENE_EXPRESSION_TO_ID } from '../avatar/expressions';
+import { AvatarDirectory } from '../avatar/model';
+import { LevelASvgRenderer, type AvatarRenderer } from '../avatar/renderer';
 import { MAX_AVATARS, type Scene } from '../schema';
 
 export type LayerKind = 'background' | 'prop' | 'avatar' | 'effect' | 'bubble';
@@ -64,12 +67,34 @@ export function layoutAvatars(n: number, width: number, height: number) {
   return out;
 }
 
+export interface ComposeOptions {
+  /** How avatars are drawn. Defaults to the Level A bust renderer. */
+  avatarRenderer?: AvatarRenderer;
+  /** avatar_id → saved avatar. Unknown ids get a deterministic default avatar. */
+  avatars?: AvatarDirectory;
+  /** 'bust' (M5 avatar system, default) or the old full-body 'figure' placeholders. */
+  avatarStyle?: 'bust' | 'figure';
+}
+
+/** Bust size (px on the 400×300 canvas) by number of characters. */
+const bustSize = (n: number, depthScale: number) =>
+  (n === 1 ? 214 : n === 2 ? 196 : n <= 8 ? Math.max(110, 196 - (n - 2) * 14) : 150) * depthScale;
+
+const defaultRenderer = new LevelASvgRenderer();
+
 /**
  * Turns a scene description into layers: background → props → avatars (back to front) →
  * effects → speech bubble. Assets are fetched once per unique key and shared by every layer
  * that uses them, so combining a handful of art pieces yields many distinct scenes.
  */
-export function composeScene(scene: Scene, assets: AssetProvider): ComposedScene {
+export function composeScene(
+  scene: Scene,
+  assets: AssetProvider,
+  opts: ComposeOptions = {},
+): ComposedScene {
+  const busts = (opts.avatarStyle ?? 'bust') === 'bust';
+  const renderer = opts.avatarRenderer ?? defaultRenderer;
+  const directory = opts.avatars ?? new AvatarDirectory();
   const { width, height } = assets.canvas;
   const used: Record<string, AssetRef> = {};
   const layers: Layer[] = [];
@@ -107,28 +132,63 @@ export function composeScene(scene: Scene, assets: AssetProvider): ComposedScene
       kind: 'prop',
       asset: key,
       x,
-      y: height * (p === 'table' ? 0.86 : 0.9),
+      y: busts ? height * (p === 'table' ? 1.0 : 0.97) : height * (p === 'table' ? 0.86 : 0.9),
       scale: 1,
       flip: false,
-      z: Z.prop + i,
+      // With busts, props (table, popcorn…) sit in front of the characters.
+      z: busts ? Z.effect - 100 + i : Z.prop + i,
     });
   });
 
+  const bustTops: number[] = [];
   characters.forEach((c, i) => {
-    const key = use(`avatar:${c.avatar_id}:${c.expression}:${c.action}`, () =>
-      assets.avatar(c.avatar_id, c.expression, c.action),
-    );
     const spot = spots[i]!;
+    const flip = characters.length === 2 && i === 1;
+    let key: string;
+    let scale = spot.scale;
+    let y = spot.y;
+    if (busts) {
+      const expressionId = c.expression_id ?? SCENE_EXPRESSION_TO_ID[c.expression];
+      const gesture = c.gesture ?? null;
+      key = `bust:${c.avatar_id}:${expressionId}:${gesture}:${c.intensity ?? 2}:${c.framing ?? 'none'}:${c.glow ?? ''}`;
+      use(key, () =>
+        renderer.renderStill(
+          {
+            config: directory.get(c.avatar_id),
+            avatarId: c.avatar_id,
+            expressionId,
+            intensity: c.intensity,
+            gestureId: gesture,
+            // Show the gesture at its held pose.
+            gestureElapsedMs: gesture ? 900 : 0,
+            framing: c.framing ?? (c.glow ? 'circle' : 'none'),
+            glow: c.glow ?? null,
+            idPrefix: `b${i}_${c.avatar_id.replace(/[^a-zA-Z0-9]/g, '')}_${expressionId}_`,
+          },
+          0,
+          { idle: false },
+        ),
+      );
+      const size = bustSize(characters.length, characters.length > 8 ? spot.scale / 0.7 : 1);
+      scale = size / 256;
+      y = characters.length > 8 ? spot.y + 20 * scale : height;
+      bustTops.push(y - size * 0.92);
+    } else {
+      key = use(`avatar:${c.avatar_id}:${c.expression}:${c.action}`, () =>
+        assets.avatar(c.avatar_id, c.expression, c.action),
+      );
+      bustTops.push(spot.y - 125 * spot.scale);
+    }
     layers.push({
       kind: 'avatar',
       asset: key,
       x: spot.x,
-      y: spot.y,
-      scale: spot.scale,
+      y,
+      scale,
       // The second of a pair faces the first.
-      flip: characters.length === 2 && i === 1,
+      flip,
       // Lower on screen = closer = drawn later.
-      z: Z.avatar + Math.round(spot.y * 10) + i / 1000,
+      z: Z.avatar + Math.round(y * 10) + i / 1000,
     });
   });
 
@@ -138,10 +198,11 @@ export function composeScene(scene: Scene, assets: AssetProvider): ComposedScene
   });
 
   if (scene.speech_bubble) {
-    const speaker = spots[Math.min(scene.speech_bubble.speaker, spots.length - 1)]!;
+    const speakerIdx = Math.min(scene.speech_bubble.speaker, spots.length - 1);
+    const speaker = spots[speakerIdx]!;
     const ref = assets.bubble(scene.speech_bubble.text);
     const key = use(`bubble:${scene.speech_bubble.text}`, () => ref);
-    const avatarTop = speaker.y - 125 * speaker.scale;
+    const avatarTop = bustTops[speakerIdx]!;
     const x = Math.min(width - ref.width / 2 - 4, Math.max(ref.width / 2 + 4, speaker.x));
     layers.push({
       kind: 'bubble',

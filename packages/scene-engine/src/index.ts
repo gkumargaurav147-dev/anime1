@@ -30,3 +30,4 @@ export {
   type EngineOptions,
   type SceneSuggestion,
 } from './engine';
+export * from './avatar';

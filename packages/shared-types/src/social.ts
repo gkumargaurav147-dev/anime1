@@ -52,7 +52,10 @@ export interface BlocksResponse {
 
 export type MessageStatus = 'sent' | 'delivered' | 'seen';
 
-/** Reserved for later milestones; always null for now. */
+/**
+ * Scene attached to a message (the scene-engine `Scene` JSON). The server validates it against
+ * the scene schema and stores null when it is invalid — the text is always kept.
+ */
 export type AnimeScene = Record<string, unknown> | null;
 
 export interface Message {
@@ -89,15 +92,35 @@ export interface ConversationsResponse {
   conversations: ConversationSummary[];
 }
 
+/**
+ * The message payload as named in the product spec. On the wire the API uses camelCase like
+ * every other endpoint (`Message` above); each field notes its `Message` counterpart.
+ */
+export interface MessagePayload {
+  message_id: string; // Message.id
+  sender_id: string; // Message.senderId
+  text: string; // Message.text
+  anime_scene: AnimeScene; // Message.animeScene
+  timestamp: string; // Message.createdAt (ISO 8601)
+  status: MessageStatus; // Message.status
+}
+
 export interface SendMessageBody {
   clientMessageId: string;
   text: string;
+  /** Optional scene; generated on the sender's device (no text leaves for any AI service). */
+  animeScene?: AnimeScene;
 }
+
+/** Why a submitted scene was not stored (the message text is stored regardless). */
+export type SceneDropReason = 'invalid' | 'too_large' | 'age_restricted';
 
 export interface SendMessageResponse {
   message: Message;
   /** True when this clientMessageId had already been stored (a retry). */
   duplicate: boolean;
+  /** Set when an attached scene was dropped; the message was still sent as text. */
+  sceneDropped?: SceneDropReason | null;
 }
 
 /**
@@ -113,6 +136,24 @@ export interface MessagesPage {
 
 export interface ReceiptBody {
   upToSeq: number;
+}
+
+// ----- Avatars (M5) -----
+
+/**
+ * Avatar option ids (face shape, skin tone, hair…). The authoritative schema and option lists
+ * live in @anime/scene-engine (AvatarConfigSchema); this is the wire shape.
+ */
+export type AvatarConfigJson = { version: number } & Record<string, string | number>;
+
+export interface AvatarResponse {
+  userId: string;
+  avatar: AvatarConfigJson | null;
+  updatedAt: string | null;
+}
+
+export interface AvatarsResponse {
+  avatars: { userId: string; avatar: AvatarConfigJson; updatedAt: string }[];
 }
 
 // ----- Presence -----

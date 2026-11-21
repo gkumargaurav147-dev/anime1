@@ -1,0 +1,103 @@
+{
+  "version": "1.0.0",
+  "space": "Bust space: 256x256, origin top-left, head centre ~(128,104), chin ~(128,156), shoulders y>=200. Off-screen hands use y>=300.",
+  "gestures": [
+    {"id": "thumbs_up", "duration_ms": 1400, "loop": false, "keys": [
+      {"t": 0, "right": {"x": 190, "y": 320, "rot": 0, "shape": "thumbs_up"}},
+      {"t": 0.25, "right": {"x": 182, "y": 196, "rot": -8, "shape": "thumbs_up"}},
+      {"t": 0.4, "right": {"x": 182, "y": 186, "rot": -4, "shape": "thumbs_up"}, "head": {"pitch": -3, "yaw": 0, "roll": 4}},
+      {"t": 0.55, "right": {"x": 182, "y": 194, "rot": -8, "shape": "thumbs_up"}},
+      {"t": 1, "right": {"x": 182, "y": 192, "rot": -6, "shape": "thumbs_up"}}
+    ]},
+    {"id": "wave", "duration_ms": 1600, "loop": true, "keys": [
+      {"t": 0, "right": {"x": 204, "y": 128, "rot": -18, "shape": "open"}},
+      {"t": 0.25, "right": {"x": 208, "y": 124, "rot": 18, "shape": "open"}, "head": {"pitch": 0, "yaw": -3, "roll": -4}},
+      {"t": 0.5, "right": {"x": 204, "y": 128, "rot": -18, "shape": "open"}},
+      {"t": 0.75, "right": {"x": 208, "y": 124, "rot": 18, "shape": "open"}, "head": {"pitch": 0, "yaw": -3, "roll": -4}},
+      {"t": 1, "right": {"x": 204, "y": 128, "rot": -18, "shape": "open"}}
+    ]},
+    {"id": "heart_hands", "duration_ms": 1800, "loop": false, "keys": [
+      {"t": 0, "left": {"x": 90, "y": 320, "rot": 0, "shape": "heart_left"}, "right": {"x": 166, "y": 320, "rot": 0, "shape": "heart_right"}},
+      {"t": 0.3, "left": {"x": 117, "y": 196, "rot": 0, "shape": "heart_left"}, "right": {"x": 139, "y": 196, "rot": 0, "shape": "heart_right"}},
+      {"t": 0.6, "left": {"x": 117, "y": 192, "rot": 0, "shape": "heart_left", "scale": 1.06}, "right": {"x": 139, "y": 192, "rot": 0, "shape": "heart_right", "scale": 1.06}, "head": {"pitch": 0, "yaw": 0, "roll": 6}},
+      {"t": 1, "left": {"x": 117, "y": 194, "rot": 0, "shape": "heart_left"}, "right": {"x": 139, "y": 194, "rot": 0, "shape": "heart_right"}}
+    ]},
+    {"id": "facepalm", "duration_ms": 1800, "loop": false, "keys": [
+      {"t": 0, "right": {"x": 180, "y": 320, "rot": 0, "shape": "palm_face"}},
+      {"t": 0.3, "right": {"x": 132, "y": 98, "rot": -12, "shape": "palm_face"}, "head": {"pitch": 10, "yaw": 0, "roll": 0}},
+      {"t": 0.7, "right": {"x": 130, "y": 102, "rot": -8, "shape": "palm_face"}, "head": {"pitch": 14, "yaw": 4, "roll": 0}},
+      {"t": 1, "right": {"x": 130, "y": 100, "rot": -10, "shape": "palm_face"}, "head": {"pitch": 12, "yaw": -4, "roll": 0}}
+    ]},
+    {"id": "bow", "duration_ms": 1800, "loop": false, "keys": [
+      {"t": 0, "head": {"pitch": 0, "yaw": 0, "roll": 0}, "body": {"dy": 0}},
+      {"t": 0.4, "head": {"pitch": 26, "yaw": 0, "roll": 0}, "body": {"dy": 14}},
+      {"t": 0.65, "head": {"pitch": 26, "yaw": 0, "roll": 0}, "body": {"dy": 14}},
+      {"t": 1, "head": {"pitch": 0, "yaw": 0, "roll": 0}, "body": {"dy": 0}}
+    ]},
+    {"id": "clap", "duration_ms": 1200, "loop": true, "keys": [
+      {"t": 0, "left": {"x": 98, "y": 204, "rot": 20, "shape": "open"}, "right": {"x": 158, "y": 204, "rot": -20, "shape": "open"}},
+      {"t": 0.25, "left": {"x": 120, "y": 200, "rot": 10, "shape": "open"}, "right": {"x": 136, "y": 200, "rot": -10, "shape": "open"}},
+      {"t": 0.5, "left": {"x": 98, "y": 204, "rot": 20, "shape": "open"}, "right": {"x": 158, "y": 204, "rot": -20, "shape": "open"}},
+      {"t": 0.75, "left": {"x": 120, "y": 200, "rot": 10, "shape": "open"}, "right": {"x": 136, "y": 200, "rot": -10, "shape": "open"}},
+      {"t": 1, "left": {"x": 98, "y": 204, "rot": 20, "shape": "open"}, "right": {"x": 158, "y": 204, "rot": -20, "shape": "open"}}
+    ]},
+    {"id": "peace", "duration_ms": 1400, "loop": false, "keys": [
+      {"t": 0, "right": {"x": 200, "y": 320, "rot": 0, "shape": "peace"}},
+      {"t": 0.3, "right": {"x": 196, "y": 134, "rot": -12, "shape": "peace"}, "head": {"pitch": 0, "yaw": -4, "roll": 6}},
+      {"t": 1, "right": {"x": 196, "y": 136, "rot": -10, "shape": "peace"}, "head": {"pitch": 0, "yaw": -4, "roll": 6}}
+    ]},
+    {"id": "point", "duration_ms": 1300, "loop": false, "keys": [
+      {"t": 0, "right": {"x": 200, "y": 320, "rot": 0, "shape": "point"}},
+      {"t": 0.35, "right": {"x": 206, "y": 176, "rot": -60, "shape": "point"}},
+      {"t": 0.55, "right": {"x": 212, "y": 172, "rot": -64, "shape": "point"}},
+      {"t": 1, "right": {"x": 208, "y": 176, "rot": -60, "shape": "point"}}
+    ]},
+    {"id": "shrug", "duration_ms": 1500, "loop": false, "keys": [
+      {"t": 0, "left": {"x": 50, "y": 320, "rot": 30, "shape": "open"}, "right": {"x": 206, "y": 320, "rot": -30, "shape": "open"}, "body": {"dy": 0}},
+      {"t": 0.4, "left": {"x": 54, "y": 196, "rot": 40, "shape": "open"}, "right": {"x": 202, "y": 196, "rot": -40, "shape": "open"}, "body": {"dy": -8}, "head": {"pitch": 0, "yaw": 0, "roll": 8}},
+      {"t": 1, "left": {"x": 54, "y": 200, "rot": 36, "shape": "open"}, "right": {"x": 202, "y": 200, "rot": -36, "shape": "open"}, "body": {"dy": -6}, "head": {"pitch": 0, "yaw": 0, "roll": 6}}
+    ]},
+    {"id": "cover_mouth", "duration_ms": 1400, "loop": false, "keys": [
+      {"t": 0, "right": {"x": 176, "y": 320, "rot": 0, "shape": "open"}},
+      {"t": 0.35, "right": {"x": 134, "y": 156, "rot": -6, "shape": "open"}},
+      {"t": 1, "right": {"x": 132, "y": 154, "rot": -4, "shape": "open"}, "head": {"pitch": 3, "yaw": 0, "roll": -4}}
+    ]},
+    {"id": "fist_pump", "duration_ms": 1100, "loop": true, "keys": [
+      {"t": 0, "right": {"x": 194, "y": 222, "rot": 0, "shape": "fist"}},
+      {"t": 0.35, "right": {"x": 198, "y": 146, "rot": -6, "shape": "fist"}, "head": {"pitch": -6, "yaw": 0, "roll": 0}},
+      {"t": 0.6, "right": {"x": 194, "y": 210, "rot": 0, "shape": "fist"}},
+      {"t": 1, "right": {"x": 194, "y": 222, "rot": 0, "shape": "fist"}}
+    ]},
+    {"id": "salute", "duration_ms": 1300, "loop": false, "keys": [
+      {"t": 0, "right": {"x": 190, "y": 320, "rot": 0, "shape": "flat"}},
+      {"t": 0.4, "right": {"x": 168, "y": 66, "rot": -28, "shape": "flat"}},
+      {"t": 1, "right": {"x": 168, "y": 68, "rot": -26, "shape": "flat"}}
+    ]},
+    {"id": "pray", "duration_ms": 1500, "loop": false, "keys": [
+      {"t": 0, "left": {"x": 110, "y": 320, "rot": 0, "shape": "flat"}, "right": {"x": 146, "y": 320, "rot": 0, "shape": "flat"}},
+      {"t": 0.4, "left": {"x": 123, "y": 198, "rot": 6, "shape": "flat"}, "right": {"x": 133, "y": 198, "rot": -6, "shape": "flat"}, "head": {"pitch": 8, "yaw": 0, "roll": 0}},
+      {"t": 1, "left": {"x": 123, "y": 200, "rot": 6, "shape": "flat"}, "right": {"x": 133, "y": 200, "rot": -6, "shape": "flat"}, "head": {"pitch": 6, "yaw": 0, "roll": 0}}
+    ]},
+    {"id": "shush", "duration_ms": 1300, "loop": false, "keys": [
+      {"t": 0, "right": {"x": 170, "y": 320, "rot": 0, "shape": "point_up"}},
+      {"t": 0.4, "right": {"x": 130, "y": 160, "rot": 0, "shape": "point_up"}},
+      {"t": 1, "right": {"x": 130, "y": 158, "rot": 0, "shape": "point_up"}}
+    ]},
+    {"id": "think_chin", "duration_ms": 1400, "loop": false, "keys": [
+      {"t": 0, "right": {"x": 176, "y": 320, "rot": 0, "shape": "fist"}},
+      {"t": 0.4, "right": {"x": 142, "y": 170, "rot": -10, "shape": "fist"}, "head": {"pitch": -4, "yaw": 6, "roll": 4}},
+      {"t": 1, "right": {"x": 142, "y": 170, "rot": -10, "shape": "fist"}, "head": {"pitch": -4, "yaw": 6, "roll": 4}}
+    ]},
+    {"id": "hands_on_cheeks", "duration_ms": 1400, "loop": false, "keys": [
+      {"t": 0, "left": {"x": 70, "y": 320, "rot": 0, "shape": "open"}, "right": {"x": 186, "y": 320, "rot": 0, "shape": "open"}},
+      {"t": 0.4, "left": {"x": 80, "y": 134, "rot": 14, "shape": "open"}, "right": {"x": 176, "y": 134, "rot": -14, "shape": "open"}},
+      {"t": 1, "left": {"x": 80, "y": 136, "rot": 12, "shape": "open"}, "right": {"x": 176, "y": 136, "rot": -12, "shape": "open"}, "head": {"pitch": 4, "yaw": 0, "roll": 6}}
+    ]},
+    {"id": "blow_kiss", "duration_ms": 1400, "loop": false, "keys": [
+      {"t": 0, "right": {"x": 176, "y": 320, "rot": 0, "shape": "fist"}},
+      {"t": 0.3, "right": {"x": 134, "y": 154, "rot": 0, "shape": "fist"}},
+      {"t": 0.6, "right": {"x": 196, "y": 132, "rot": -30, "shape": "open"}, "head": {"pitch": 0, "yaw": -4, "roll": 6}},
+      {"t": 1, "right": {"x": 204, "y": 140, "rot": -30, "shape": "open"}, "head": {"pitch": 0, "yaw": -4, "roll": 6}}
+    ]}
+  ]
+}

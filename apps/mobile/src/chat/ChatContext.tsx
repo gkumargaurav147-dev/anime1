@@ -42,7 +42,14 @@ interface ChatContextValue {
   friendsVersion: number;
   openConversation: (id: string) => Promise<void>;
   loadOlder: (id: string) => Promise<void>;
-  sendText: (conversationId: string, text: string) => Promise<void>;
+  /** Text is always sent; the scene is optional and dropped (not the text) if invalid. */
+  sendText: (
+    conversationId: string,
+    text: string,
+    animeScene?: Record<string, unknown> | null,
+  ) => Promise<void>;
+  /** Bumped when any friend's avatar changes. */
+  avatarVersion: number;
   retry: (clientMessageId: string) => void;
   discard: (clientMessageId: string) => void;
   setActiveConversation: (id: string | null) => void;
@@ -64,6 +71,7 @@ export function ChatProvider({ children }: { children: ReactNode }) {
   const [presence, setPresence] = useState<Record<string, Presence>>({});
   const [hasOlder, setHasOlder] = useState<Record<string, boolean>>({});
   const [friendsVersion, setFriendsVersion] = useState(0);
+  const [avatarVersion, setAvatarVersion] = useState(0);
 
   // Refs mirror state so async flows (socket handlers, flush loops) never read stale values.
   const userRef = useRef<string | null>(null);
@@ -181,7 +189,14 @@ export function ChatProvider({ children }: { children: ReactNode }) {
         try {
           const res = await authedRequest<SendMessageResponse>(
             `/conversations/${item.conversationId}/messages`,
-            { method: 'POST', body: { clientMessageId: item.clientMessageId, text: item.text } },
+            {
+              method: 'POST',
+              body: {
+                clientMessageId: item.clientMessageId,
+                text: item.text,
+                ...(item.animeScene ? { animeScene: item.animeScene } : {}),
+              },
+            },
           );
           onConfirmed(res.message);
           retryAttempt.current = 0;
@@ -333,6 +348,9 @@ export function ChatProvider({ children }: { children: ReactNode }) {
           setPresence((prev) => ({ ...prev, [p.userId]: p }));
           return;
         }
+        case 'avatar.changed':
+          setAvatarVersion((v) => v + 1);
+          return;
         case 'friends.changed':
           setFriendsVersion((v) => v + 1);
           void refreshConversations().catch(() => {});
@@ -412,6 +430,7 @@ export function ChatProvider({ children }: { children: ReactNode }) {
       presence,
       hasOlder,
       friendsVersion,
+      avatarVersion,
       refreshConversations,
 
       async openConversation(id) {
@@ -438,13 +457,14 @@ export function ChatProvider({ children }: { children: ReactNode }) {
         setHasOlder((h) => ({ ...h, [id]: page.nextCursor !== null }));
       },
 
-      async sendText(conversationId, text) {
+      async sendText(conversationId, text, animeScene) {
         const trimmed = text.trim();
         if (!trimmed) return;
         const item: OutboxItem = {
           clientMessageId: uuid(),
           conversationId,
           text: trimmed,
+          animeScene: animeScene ?? null,
           createdAt: new Date().toISOString(),
           attempts: 0,
         };
@@ -486,6 +506,7 @@ export function ChatProvider({ children }: { children: ReactNode }) {
       presence,
       hasOlder,
       friendsVersion,
+      avatarVersion,
       refreshConversations,
       ensureLoaded,
       catchUp,

@@ -89,11 +89,29 @@ export type TimeOfDay = z.infer<typeof TimeOfDaySchema>;
 
 const slug = z.string().regex(/^[a-z0-9_]+$/, 'lowercase snake_case');
 
+const hex = z.string().regex(/^#[0-9A-Fa-f]{6}$/);
+export const FramingSchema = z.enum(['none', 'circle', 'square']);
+
 export const CharacterSchema = z.object({
   role: z.enum(['sender', 'recipient', 'friend', 'crowd']),
   avatar_id: z.string().min(1),
   expression: ExpressionSchema,
   action: ActionSchema,
+  /** Avatar system (M5): one of the ~120 expression ids; overrides `expression` when set. */
+  expression_id: z
+    .string()
+    .regex(/^[a-z0-9_]+$/)
+    .optional(),
+  /** Gesture clip played together with the expression. */
+  gesture: z
+    .string()
+    .regex(/^[a-z0-9_]+$/)
+    .nullable()
+    .optional(),
+  intensity: z.union([z.literal(1), z.literal(2), z.literal(3)]).optional(),
+  framing: FramingSchema.optional(),
+  /** Colour glow behind this character (mood colour). */
+  glow: hex.optional(),
 });
 export type Character = z.infer<typeof CharacterSchema>;
 
@@ -153,6 +171,29 @@ export const CatalogSceneSchema = z.object({
   /** Default expression/action for the characters. */
   expression: ExpressionSchema.default('smile'),
   action: ActionSchema.default('idle'),
+  /**
+   * Per-character avatar direction (index 0 = sender, 1 = recipient): expression, gesture,
+   * framing and glow. Missing fields fall back to the scene defaults above.
+   */
+  cast: z
+    .array(
+      z.object({
+        expression_id: z
+          .string()
+          .regex(/^[a-z0-9_]+$/)
+          .optional(),
+        gesture: z
+          .string()
+          .regex(/^[a-z0-9_]+$/)
+          .nullable()
+          .optional(),
+        intensity: z.union([z.literal(1), z.literal(2), z.literal(3)]).optional(),
+        framing: FramingSchema.optional(),
+        glow: hex.optional(),
+      }),
+    )
+    .max(2)
+    .optional(),
 });
 export type CatalogScene = z.infer<typeof CatalogSceneSchema>;
 

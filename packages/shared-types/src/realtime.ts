@@ -1,4 +1,4 @@
-import type { Message, MessageStatus, Presence, SendMessageBody } from './social';
+import type { Message, MessageStatus, Presence, SceneDropReason, SendMessageBody } from './social';
 
 /**
  * WebSocket protocol on GET /ws (JSON text frames).
@@ -17,7 +17,13 @@ export type ServerFrame =
   /** A new message in one of your conversations (also echoed to your other devices). */
   | { type: 'message'; message: Message }
   /** Reply to a `send` frame. */
-  | { type: 'ack'; clientMessageId: string; message: Message; duplicate: boolean }
+  | {
+      type: 'ack';
+      clientMessageId: string;
+      message: Message;
+      duplicate: boolean;
+      sceneDropped?: SceneDropReason | null;
+    }
   /** `userId` has received/seen every message up to `upToSeq` in the conversation. */
   | {
       type: 'receipt';
@@ -29,6 +35,8 @@ export type ServerFrame =
   | ({ type: 'presence' } & Presence)
   /** Friends or requests changed; refetch the lists. */
   | { type: 'friends.changed' }
+  /** A friend (or you, on another device) saved a new avatar; refetch it. */
+  | { type: 'avatar.changed'; userId: string }
   | { type: 'error'; code: string; message: string; clientMessageId?: string };
 
 /**

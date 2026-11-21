@@ -1,4 +1,4 @@
-import crypto from 'node:crypto';
+﻿import crypto from 'node:crypto';
 import type { FastifyInstance } from 'fastify';
 import { Pool } from 'pg';
 import request from 'supertest';
@@ -48,6 +48,7 @@ export async function createTestApp(overrides: Partial<Record<keyof Config, unkn
 }
 
 const TABLES = [
+  'avatars',
   'messages',
   'conversation_members',
   'conversations',

@@ -3,6 +3,8 @@ import { Alert, Platform, View } from 'react-native';
 import { router } from 'expo-router';
 import { useAuth } from '@/auth/AuthContext';
 import { useChat } from '@/chat/ChatContext';
+import { AvatarView } from '@/avatar/AvatarView';
+import { useMyAvatar } from '@/avatar/useMyAvatar';
 import { localStore } from '@/chat/localStore';
 import { Body, Button, ErrorText, Field, Screen, Title } from '@/components/ui';
 import { ApiRequestError } from '@/lib/api';
@@ -22,6 +24,7 @@ export default function Settings() {
   const auth = useAuth();
   const { session, deleteAccount } = auth;
   const chat = useChat();
+  const me = useMyAvatar();
 
   /** Logging out wipes this device's chat cache, so warn if anything is still unsent. */
   const leave = async (fn: () => Promise<void>) => {
@@ -72,12 +75,29 @@ export default function Settings() {
 
   return (
     <Screen>
-      <Body>
-        Signed in as {session?.user.username} ·{' '}
-        {session?.user.isTeen ? 'Teen account' : 'Adult account'}
-      </Body>
+      <View style={{ alignItems: 'center', gap: 8 }}>
+        {/* Profile picture: the same avatar as in scenes, as a still frame. */}
+        <AvatarView
+          config={me.avatar}
+          avatarId={me.avatarId}
+          expressionId="smile"
+          size={120}
+          animated={false}
+          level="fallback_static"
+        />
+        <Body>
+          Signed in as {session?.user.username} ·{' '}
+          {session?.user.isTeen ? 'Teen account' : 'Adult account'}
+        </Body>
+      </View>
 
       <View style={{ gap: 12 }}>
+        <Button title="Edit avatar" onPress={() => router.push('/avatar-creator')} />
+        <Button
+          title="Avatar expressions demo"
+          variant="secondary"
+          onPress={() => router.push('/avatar-demo')}
+        />
         <Button
           title="Blocked users"
           variant="secondary"

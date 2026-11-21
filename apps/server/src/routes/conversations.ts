@@ -133,8 +133,21 @@ export const conversationRoutes = (ctx: Ctx) => async (app: FastifyInstance) => 
     },
     async (req, reply) => {
       const { id } = idParams.parse(req.params);
-      const body = z.object({ clientMessageId: z.string(), text: z.string() }).parse(req.body);
-      const result = await sendMessage(ctx, req.auth!.userId, id, body.clientMessageId, body.text);
+      const body = z
+        .object({
+          clientMessageId: z.string(),
+          text: z.string(),
+          animeScene: z.unknown().optional(),
+        })
+        .parse(req.body);
+      const result = await sendMessage(
+        ctx,
+        req.auth!.userId,
+        id,
+        body.clientMessageId,
+        body.text,
+        body.animeScene,
+      );
       const res: SendMessageResponse = result;
       return reply.status(result.duplicate ? 200 : 201).send(res);
     },

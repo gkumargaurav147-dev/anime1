@@ -6,6 +6,8 @@ export interface OutboxItem {
   clientMessageId: string;
   conversationId: string;
   text: string;
+  /** Scene generated on this device (null = text only). */
+  animeScene?: Record<string, unknown> | null;
   createdAt: string;
   attempts: number;
   /** Set when the server permanently refused it (e.g. no longer friends). Kept until dismissed. */
