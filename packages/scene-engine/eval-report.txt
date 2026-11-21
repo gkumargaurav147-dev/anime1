@@ -1,0 +1,53 @@
+Scene engine — Level 1 parser accuracy report
+============================================================
+Sentences:            508
+Top-1 accuracy:       499/508 (98.2%)
+Top-3 accuracy:       503/508 (99.0%)
+Tiers:                auto 309 · chips 179 · none 20
+Auto-suggest precision: 307/308 (99.7%)
+
+By group:
+  celebration         32/32  100.0%
+  daily_life          35/36   97.2%
+  date_and_romance    32/32  100.0%
+  emotions            40/40  100.0%
+  family              31/32   96.9%
+  food_and_drink      44/44  100.0%
+  friends             36/36  100.0%
+  greetings           31/32   96.9%
+  movies_and_fun      35/36   97.2%
+  negation            28/30   93.3%
+  no_scene             2/2   100.0%
+  sarcasm             18/20   90.0%
+  seasonal            32/32  100.0%
+  support             32/32  100.0%
+  travel              39/40   97.5%
+  work_and_study      32/32  100.0%
+
+Failures: 9 (showing 9)
+✗ "Morning sunshine" → expected good_morning_sun, got none (none 0.393) top3=good_morning_sun
+✗ "On the plane, see you soon" → expected flight_takeoff, got goodbye_wave (chips 0.726) top3=goodbye_wave,flight_takeoff
+✗ "Their tour is coming here" → expected concert_crowd, got none (none 0.382) top3=concert_crowd,on_my_way
+✗ "My sister is pregnant" → expected new_baby, got sibling_fight (chips 0.622) top3=sibling_fight,new_baby
+✗ "Going for a run" → expected gym_workout, got none (none 0.393) top3=gym_workout
+✗ [negation] "I can't wait for dinner tonight!" → expected dinner_out, got excited_jump (auto 0.854) top3=excited_jump,dinner_out
+✗ [negation] "Let's not go out tonight, stay home instead" → expected at_home_chill, got cancel_plans (chips 0.663) top3=cancel_plans,at_home_chill
+✗ [sarcasm] "Wow thanks a lot for ditching me" → expected none, got thank_you_bow (auto 0.767) top3=thank_you_bow,surprised_gasp
+✗ [sarcasm] "Cool cool cool, nobody showed up to my party" → expected party_time, got cancel_plans (chips 0.445) top3=cancel_plans
+
+============================================================
+Held-out set (never used for tuning): 48/60 (80.0%)
+The main corpus above was used to tune the rules, so its number is optimistic;
+this one is the honest estimate for new messages.
+✗ "Anyone up for sushi tonight?" → expected dinner_out, got none (none 0) top3=-
+✗ "Matcha latte date with the girls" → expected coffee_break, got tea_time (chips 0.411) top3=tea_time,coffee_break,date_night
+✗ "Night everyone, heading to bed" → expected good_night_moon, got none (none 0) top3=-
+✗ "How you doing?" → expected how_are_you, got none (none 0) top3=-
+✗ "I'm crying laughing" → expected laughing_tears, got sad_rain (chips 0.649) top3=sad_rain,laughing_tears
+✗ "Zero energy today" → expected tired_yawn, got none (none 0) top3=-
+✗ "Come hang at mine" → expected hangout_friends, got none (none 0) top3=-
+✗ "Congratulations on the new job!" → expected got_the_job, got congrats_confetti (chips 0.548) top3=congrats_confetti,got_the_job
+✗ "Chem final tomorrow, pray for me" → expected exam_stress, got none (none 0) top3=-
+✗ "Report due at midnight" → expected deadline_panic, got none (none 0) top3=-
+✗ "Gonna be 15 min late, sorry" → expected running_late, got sorry_apology (chips 0.582) top3=sorry_apology,running_late
+✗ "Rainy day, staying in" → expected rainy_day, got at_home_chill (chips 0.624) top3=at_home_chill,rainy_day

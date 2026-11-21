@@ -12,7 +12,9 @@
     "db:migrate": "npm run migrate -w @anime/server",
     "dev:server": "npm run dev -w @anime/server",
     "dev:app": "npm run start -w @anime/mobile",
-    "test": "npm run test -w @anime/server",
+    "test": "npm run test -w @anime/server && npm run test -w @anime/scene-engine",
+    "scene": "tsx packages/scene-engine/src/cli.ts",
+    "scene:eval": "npm run eval -w @anime/scene-engine",
     "typecheck": "npm run typecheck --workspaces --if-present",
     "lint": "eslint .",
     "format": "prettier --write .",
@@ -24,6 +26,7 @@
     "eslint-config-prettier": "^10.1.8",
     "globals": "^17.14.0",
     "prettier": "^3.10.1",
+    "tsx": "^4.23.15",
     "typescript": "~6.0.3",
     "typescript-eslint": "^8.73.0"
   }

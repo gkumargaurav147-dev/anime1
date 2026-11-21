@@ -128,6 +128,46 @@ that miss a round; each round also re-checks the session (logout closes the sock
 refreshes presence. Frames from one socket are processed in order and rate limited (token bucket).
 With `REDIS_URL` set, events fan out across server instances over Redis pub/sub.
 
+## Scene engine (M3) — `packages/scene-engine`
+
+Turns a chat message into an animated-scene description, like an emoji set but animated.
+
+```bash
+npm run scene -- "Can we go out for dinner tonight?"
+```
+
+(`pnpm scene "..."` runs the same root script if you use pnpm.) Flags: `--age <n>` / `--teen`,
+`--explain` (intent, entities, negation, sarcasm, top 3), `--svg out.svg` (render with placeholder
+art).
+
+```bash
+npm run scene:eval
+```
+
+prints the accuracy report (also saved to `packages/scene-engine/eval-report.txt`).
+
+| Piece          | Where                                      | What                                                                                                                       |
+| -------------- | ------------------------------------------ | -------------------------------------------------------------------------------------------------------------------------- |
+| Scene schema   | `src/schema.ts`                            | zod: scene_type, characters (1–500), setting, props, emotion, speech_bubble, effects, camera, confidence, catalog_scene_id |
+| Catalog        | `src/catalog/catalog.v1.json`, `loader.ts` | Versioned JSON, 114 scenes in 13 categories (8–11 each); validated typed loader with age filter                            |
+| Composer       | `src/compose/composer.ts`                  | background → props → avatars → effects → bubble; 1, 2, row or crowd layout up to 500; assets deduplicated                  |
+| Art            | `src/assets/*`                             | `AssetProvider` interface (SVG or Lottie refs) + `PlaceholderAssetProvider` (flat SVG shapes)                              |
+| Level 1 parser | `src/parser/*`                             | Offline rules: intents, entities, questions, negation scope, sarcasm cues, top 3 with confidence                           |
+| Engine         | `src/engine.ts`                            | `suggestScene(text, {age})`, `sceneFromCatalog(id, {age})`; builds the Scene and the speech bubble                         |
+
+**Confidence → UI:** ≥ 0.75 auto-suggest · 0.40–0.75 top-3 chips · < 0.40 no suggestion (picker
+only). Likely sarcasm halves confidence, so it can't auto-suggest.
+
+**Age:** romantic scenes (`min_age: 18`) are removed from the candidate set before matching, so
+they can't be suggested, offered as a chip, or picked by id for users under 18. Unknown age is
+treated as a minor.
+
+**Accuracy:** the 508-sentence corpus (`test/corpus.ts`, 50 negation/sarcasm cases) was used to
+tune the rules, so its 98% top-1 is optimistic. The 60-sentence held-out set (`test/holdout.ts`,
+never tuned on) scores 80%, which is the honest number for new messages. Most held-out misses are
+missing vocabulary. Improve rules by adding failing sentences to `corpus.ts`, adjusting tags in the
+catalog or the lexicon, and re-running `npm run scene:eval`.
+
 ## Design notes
 
 **Data minimisation.** The age gate takes a full date of birth to compute an exact age, then
