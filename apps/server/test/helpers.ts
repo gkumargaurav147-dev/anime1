@@ -13,6 +13,7 @@ export interface TestCtx {
   pool: Pool;
   sms: DevSmsProvider;
   config: Config;
+  wsUrl: string;
   http: () => ReturnType<typeof request>;
   close: () => Promise<void>;
 }
@@ -29,12 +30,14 @@ export async function createTestApp(overrides: Partial<Record<keyof Config, unkn
   const pool = new Pool({ connectionString: config.DATABASE_URL });
   const sms = new DevSmsProvider(() => {});
   const app = await buildApp({ config, pool, sms });
-  await app.ready();
+  // Listen on a random port so WebSocket tests can connect.
+  const address = await app.listen({ port: 0, host: '127.0.0.1' });
   const ctx: TestCtx = {
     app,
     pool,
     sms,
     config,
+    wsUrl: `${address.replace(/^http/, 'ws')}/ws`,
     http: () => request(app.server),
     close: async () => {
       await app.close();
@@ -45,6 +48,11 @@ export async function createTestApp(overrides: Partial<Record<keyof Config, unkn
 }
 
 const TABLES = [
+  'messages',
+  'conversation_members',
+  'conversations',
+  'friendships',
+  'blocks',
   'reports',
   'otp_codes',
   'sessions',

@@ -2,6 +2,7 @@ import { ActivityIndicator, View } from 'react-native';
 import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { AuthProvider, useAuth } from '@/auth/AuthContext';
+import { ChatProvider } from '@/chat/ChatContext';
 import { colors } from '@/components/ui';
 
 function RootStack() {
@@ -26,7 +27,13 @@ function RootStack() {
         <Stack.Screen name="blocked" options={{ headerShown: false, gestureEnabled: false }} />
       </Stack.Protected>
       <Stack.Protected guard={signedIn}>
-        <Stack.Screen name="home" options={{ title: 'Home', headerBackVisible: false }} />
+        <Stack.Screen name="home" options={{ title: 'Chats', headerBackVisible: false }} />
+        <Stack.Screen name="friends" options={{ title: 'Friends' }} />
+        <Stack.Screen name="requests" options={{ title: 'Requests' }} />
+        <Stack.Screen name="add-friend" options={{ title: 'Add friend' }} />
+        <Stack.Screen name="scan" options={{ title: 'Scan QR code' }} />
+        <Stack.Screen name="chat/[id]" options={{ title: '' }} />
+        <Stack.Screen name="blocked-users" options={{ title: 'Blocked users' }} />
         <Stack.Screen name="settings" options={{ title: 'Settings' }} />
       </Stack.Protected>
     </Stack>
@@ -36,8 +43,10 @@ function RootStack() {
 export default function RootLayout() {
   return (
     <AuthProvider>
-      <StatusBar style="dark" />
-      <RootStack />
+      <ChatProvider>
+        <StatusBar style="dark" />
+        <RootStack />
+      </ChatProvider>
     </AuthProvider>
   );
 }

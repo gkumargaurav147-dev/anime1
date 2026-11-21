@@ -20,7 +20,15 @@ export type ErrorCode =
   | 'PHONE_TAKEN'
   | 'RATE_LIMITED'
   | 'NOT_FOUND'
+  | 'FORBIDDEN'
+  | 'NOT_FRIENDS'
+  | 'ALREADY_FRIENDS'
+  | 'QR_INVALID'
+  | 'CONFLICT'
   | 'INTERNAL_ERROR';
+
+export * from './social';
+export * from './realtime';
 
 export interface ApiError {
   error: {

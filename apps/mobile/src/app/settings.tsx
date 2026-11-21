@@ -1,6 +1,9 @@
 import { useState } from 'react';
 import { Alert, Platform, View } from 'react-native';
+import { router } from 'expo-router';
 import { useAuth } from '@/auth/AuthContext';
+import { useChat } from '@/chat/ChatContext';
+import { localStore } from '@/chat/localStore';
 import { Body, Button, ErrorText, Field, Screen, Title } from '@/components/ui';
 import { ApiRequestError } from '@/lib/api';
 
@@ -16,7 +19,33 @@ function confirm(title: string, message: string, action: string): Promise<boolea
 }
 
 export default function Settings() {
-  const { session, logout, logoutAll, deleteAccount } = useAuth();
+  const auth = useAuth();
+  const { session, deleteAccount } = auth;
+  const chat = useChat();
+
+  /** Logging out wipes this device's chat cache, so warn if anything is still unsent. */
+  const leave = async (fn: () => Promise<void>) => {
+    const unsent = chat.outbox.length;
+    if (
+      unsent > 0 &&
+      !(await confirm(
+        'Unsent messages',
+        `${unsent} message(s) haven't been sent yet and will be lost if you log out now.`,
+        'Log out anyway',
+      ))
+    ) {
+      return;
+    }
+    await chat.resetLocalData();
+    await fn();
+  };
+  const logout = () => leave(auth.logout);
+  const logoutAll = () => leave(auth.logoutAll);
+  const deleteAndWipe = async (password: string) => {
+    const uid = session?.user.id;
+    await deleteAccount(password);
+    if (uid) await localStore.clear(uid);
+  };
   const [busy, setBusy] = useState<null | 'logout' | 'all' | 'delete'>(null);
   const [password, setPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
@@ -38,14 +67,22 @@ export default function Settings() {
       'This permanently deletes your account and all of its data. This cannot be undone.',
       'Delete',
     );
-    if (ok) await run('delete', () => deleteAccount(password));
+    if (ok) await run('delete', () => deleteAndWipe(password));
   };
 
   return (
     <Screen>
-      <Body>Signed in as {session?.user.username}</Body>
+      <Body>
+        Signed in as {session?.user.username} ·{' '}
+        {session?.user.isTeen ? 'Teen account' : 'Adult account'}
+      </Body>
 
       <View style={{ gap: 12 }}>
+        <Button
+          title="Blocked users"
+          variant="secondary"
+          onPress={() => router.push('/blocked-users')}
+        />
         <Button
           title="Log out"
           variant="secondary"

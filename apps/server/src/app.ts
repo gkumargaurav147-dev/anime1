@@ -13,11 +13,25 @@ import { ageGateRoutes } from './routes/age-gate';
 import { authRoutes } from './routes/auth';
 import { meRoutes } from './routes/me';
 import { otpRoutes } from './routes/otp';
+import { friendRoutes } from './routes/friends';
+import { conversationRoutes } from './routes/conversations';
+import { LocalBus, RedisBus, type EventBus } from './realtime/bus';
+import { registerGateway } from './realtime/gateway';
+import { MemoryPresenceStore, RedisPresenceStore, type PresenceStore } from './realtime/presence';
 
 export interface AppDeps {
   config: Config;
   pool: Pool;
   sms: SmsProvider;
+  /** Defaults: Redis-backed when REDIS_URL is set, in-memory otherwise. */
+  bus?: EventBus;
+  presence?: PresenceStore;
+}
+
+/** Dependencies after buildApp has filled in the realtime pieces. */
+export interface Ctx extends AppDeps {
+  bus: EventBus;
+  presence: PresenceStore;
 }
 
 export async function buildApp(
@@ -89,11 +103,25 @@ export async function buildApp(
 
   registerAuthDecorators(app, deps);
 
+  const ctx: Ctx = {
+    ...deps,
+    bus: deps.bus ?? (redis ? new RedisBus(redis) : new LocalBus()),
+    presence:
+      deps.presence ??
+      (redis
+        ? new RedisPresenceStore(redis, config.PRESENCE_TTL_SECONDS)
+        : new MemoryPresenceStore(config.PRESENCE_TTL_SECONDS)),
+  };
+  app.addHook('onClose', async () => ctx.bus.close());
+
   app.get('/health', async () => ({ ok: true }));
-  await app.register(ageGateRoutes(deps));
-  await app.register(authRoutes(deps));
-  await app.register(meRoutes(deps));
-  await app.register(otpRoutes(deps));
+  await app.register(ageGateRoutes(ctx));
+  await app.register(authRoutes(ctx));
+  await app.register(meRoutes(ctx));
+  await app.register(otpRoutes(ctx));
+  await app.register(friendRoutes(ctx));
+  await app.register(conversationRoutes(ctx));
+  await app.register(async (scope) => registerGateway(scope, ctx));
 
   return app;
 }

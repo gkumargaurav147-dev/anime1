@@ -17,6 +17,13 @@ const schema = z.object({
   AUTH_RATE_LIMIT_MAX: z.coerce.number().int().positive().default(10),
   AUTH_RATE_LIMIT_WINDOW_MS: z.coerce.number().int().positive().default(60_000),
   SMS_PROVIDER: z.enum(['dev']).default('dev'),
+  // Realtime
+  HEARTBEAT_INTERVAL_MS: z.coerce.number().int().positive().default(25_000),
+  WS_AUTH_TIMEOUT_MS: z.coerce.number().int().positive().default(5_000),
+  PRESENCE_TTL_SECONDS: z.coerce.number().int().positive().default(60),
+  // Chat
+  MESSAGE_RATE_LIMIT_MAX: z.coerce.number().int().positive().default(120), // per minute
+  FRIEND_QR_TTL_SECONDS: z.coerce.number().int().positive().default(600),
 });
 
 export type Config = z.infer<typeof schema>;

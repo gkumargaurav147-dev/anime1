@@ -4,7 +4,32 @@ import type { AgeBracket } from '@anime/shared-types';
 const ISSUER = 'anime';
 const ACCESS_AUDIENCE = 'access';
 const AGE_AUDIENCE = 'age-gate';
+const FRIEND_QR_AUDIENCE = 'friend-qr';
 export const AGE_TOKEN_TTL_SECONDS = 15 * 60;
+
+/** Token shown as a QR code; scanning it sends a friend request to `sub`. */
+export function signFriendQrToken(secret: string, userId: string, ttlSeconds: number) {
+  return jwt.sign({}, secret, {
+    algorithm: 'HS256',
+    subject: userId,
+    issuer: ISSUER,
+    audience: FRIEND_QR_AUDIENCE,
+    expiresIn: ttlSeconds,
+  });
+}
+
+export function verifyFriendQrToken(secret: string, token: string): string | null {
+  try {
+    const p = jwt.verify(token, secret, {
+      algorithms: ['HS256'],
+      issuer: ISSUER,
+      audience: FRIEND_QR_AUDIENCE,
+    });
+    return typeof p !== 'string' && typeof p.sub === 'string' ? p.sub : null;
+  } catch {
+    return null;
+  }
+}
 
 export interface AccessClaims {
   sub: string; // user id

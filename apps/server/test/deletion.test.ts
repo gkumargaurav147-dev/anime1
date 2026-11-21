@@ -14,6 +14,10 @@ const USER_TABLES: [table: string, column: string][] = [
   ['sessions', 'user_id'],
   ['otp_codes', 'user_id'],
   ['reports', 'reporter_id'],
+  ['friendships', 'requested_by'],
+  ['blocks', 'blocker_id'],
+  ['conversation_members', 'user_id'],
+  ['messages', 'sender_id'],
 ];
 
 async function countRows(userId: string) {
@@ -46,6 +50,33 @@ describe('DELETE /me', () => {
       `INSERT INTO reports (reporter_id, reported_user_id, reason) VALUES ($1, $2, 'spam'), ($2, $1, 'spam')`,
       [auth.user.id, other.auth.user.id],
     );
+    // Friendship, conversation, a message, and a block.
+    await ctx
+      .http()
+      .post('/friends/requests')
+      .set('authorization', bearer)
+      .send({ username: other.username })
+      .expect(201);
+    await ctx
+      .http()
+      .post(`/friends/requests/${auth.user.id}/accept`)
+      .set('authorization', `Bearer ${other.auth.accessToken}`)
+      .expect(204);
+    const friends = await ctx.http().get('/friends').set('authorization', bearer).expect(200);
+    const conv = friends.body.friends[0].conversationId;
+    await ctx
+      .http()
+      .post(`/conversations/${conv}/messages`)
+      .set('authorization', bearer)
+      .send({ clientMessageId: 'delete-me-0001', text: 'soon gone' })
+      .expect(201);
+    const third = await signupUser(ctx);
+    await ctx
+      .http()
+      .post('/blocks')
+      .set('authorization', bearer)
+      .send({ userId: third.auth.user.id })
+      .expect(204);
     expect(Object.values(await countRows(auth.user.id)).every((n) => n > 0)).toBe(true);
 
     await ctx.http().delete('/me').set('authorization', bearer).send({ password }).expect(204);

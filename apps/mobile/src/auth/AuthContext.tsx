@@ -41,6 +41,10 @@ interface AuthContextValue {
   deleteAccount: (password: string) => Promise<void>;
   /** Authenticated request with transparent access-token refresh. */
   authedRequest: <T>(path: string, opts?: Omit<RequestOptions, 'accessToken'>) => Promise<T>;
+  /** Current access token (for the WebSocket auth frame). */
+  getAccessToken: () => string | null;
+  /** Forces a token refresh; resolves to the new access token, or null if signed out. */
+  refreshAccessToken: () => Promise<string | null>;
 }
 
 const AuthContext = createContext<AuthContextValue | null>(null);
@@ -128,6 +132,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       session,
       ageToken,
       authedRequest,
+      getAccessToken: () => sessionRef.current?.accessToken ?? null,
+      refreshAccessToken: async () => (await refresh())?.accessToken ?? null,
 
       async localBlockedUntil() {
         const v = Number(await storage.get(KEYS.ageBlockedUntil));
@@ -189,7 +195,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         await setSession(null);
       },
     }),
-    [ready, session, ageToken, authedRequest, setSession],
+    [ready, session, ageToken, authedRequest, refresh, setSession],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

@@ -1,5 +1,5 @@
-import * as Crypto from 'expo-crypto';
 import { KEYS, storage } from './storage';
+import { uuid } from './uuid';
 
 let cached: string | null = null;
 
@@ -11,7 +11,7 @@ export async function getDeviceId(): Promise<string> {
   if (cached) return cached;
   let id = await storage.get(KEYS.deviceId);
   if (!id) {
-    id = Crypto.randomUUID();
+    id = uuid();
     await storage.set(KEYS.deviceId, id);
   }
   cached = id;

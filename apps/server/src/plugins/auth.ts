@@ -1,4 +1,5 @@
 import type { FastifyInstance, FastifyRequest } from 'fastify';
+import type { Pool } from 'pg';
 import type { AppDeps } from '../app';
 import { AppError, unauthorized } from '../errors';
 import { sha256 } from '../lib/crypto';
@@ -30,22 +31,35 @@ export function requireDeviceHash(req: FastifyRequest): string {
   return dh;
 }
 
-export function registerAuthDecorators(app: FastifyInstance, { config, pool }: AppDeps) {
-  /**
-   * Verifies the bearer access token AND that its session is still live, so logout /
-   * logout-all / account deletion take effect immediately rather than at token expiry.
-   */
+export async function isSessionLive(pool: Pool, userId: string, sessionId: string) {
+  const { rowCount } = await pool.query(
+    `SELECT 1 FROM sessions
+      WHERE id = $1 AND user_id = $2 AND revoked_at IS NULL AND expires_at > now()`,
+    [sessionId, userId],
+  );
+  return !!rowCount;
+}
+
+/**
+ * Verifies an access token AND that its session is still live, so logout / logout-all /
+ * account deletion take effect immediately rather than at token expiry.
+ */
+export async function authenticateToken(
+  { config, pool }: Pick<AppDeps, 'config' | 'pool'>,
+  token: string,
+): Promise<{ userId: string; sessionId: string } | null> {
+  const claims = verifyAccessToken(config.JWT_ACCESS_SECRET, token);
+  if (!claims) return null;
+  if (!(await isSessionLive(pool, claims.sub, claims.sid))) return null;
+  return { userId: claims.sub, sessionId: claims.sid };
+}
+
+export function registerAuthDecorators(app: FastifyInstance, deps: AppDeps) {
   app.decorate('requireAuth', async (req: FastifyRequest) => {
     const header = req.headers.authorization;
     if (!header?.startsWith('Bearer ')) throw unauthorized();
-    const claims = verifyAccessToken(config.JWT_ACCESS_SECRET, header.slice(7));
-    if (!claims) throw unauthorized('Session expired. Please sign in again.');
-    const { rowCount } = await pool.query(
-      `SELECT 1 FROM sessions
-        WHERE id = $1 AND user_id = $2 AND revoked_at IS NULL AND expires_at > now()`,
-      [claims.sid, claims.sub],
-    );
-    if (!rowCount) throw unauthorized('Session expired. Please sign in again.');
-    req.auth = { userId: claims.sub, sessionId: claims.sid };
+    const auth = await authenticateToken(deps, header.slice(7));
+    if (!auth) throw unauthorized('Session expired. Please sign in again.');
+    req.auth = auth;
   });
 }
