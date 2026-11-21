@@ -1,0 +1,11 @@
+{
+  "name": "@anime/scene-engine",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Scene engine (placeholder, intentionally empty for now).",
+  "main": "src/index.ts",
+  "types": "src/index.ts",
+  "scripts": {
+    "typecheck": "tsc --noEmit -p ."
+  }
+}

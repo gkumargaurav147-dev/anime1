@@ -1,0 +1,11 @@
+{
+  "name": "@anime/shared-types",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Request/response types shared by the server and the mobile app. Types only: no runtime code.",
+  "main": "src/index.ts",
+  "types": "src/index.ts",
+  "scripts": {
+    "typecheck": "tsc --noEmit -p ."
+  }
+}

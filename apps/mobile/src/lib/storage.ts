@@ -1,0 +1,24 @@
+import { Platform } from 'react-native';
+import * as SecureStore from 'expo-secure-store';
+
+/** Secure key/value storage (Keychain / Keystore). Falls back to localStorage on web. */
+export const storage = {
+  async get(key: string): Promise<string | null> {
+    if (Platform.OS === 'web') return globalThis.localStorage?.getItem(key) ?? null;
+    return SecureStore.getItemAsync(key);
+  },
+  async set(key: string, value: string): Promise<void> {
+    if (Platform.OS === 'web') return globalThis.localStorage?.setItem(key, value);
+    return SecureStore.setItemAsync(key, value);
+  },
+  async remove(key: string): Promise<void> {
+    if (Platform.OS === 'web') return globalThis.localStorage?.removeItem(key);
+    return SecureStore.deleteItemAsync(key);
+  },
+};
+
+export const KEYS = {
+  deviceId: 'anime.deviceId',
+  session: 'anime.session',
+  ageBlockedUntil: 'anime.ageBlockedUntil',
+} as const;
